@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Desarrollador - GameStore</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --primary: #f59e0b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #10b981;
+            --danger: #ef4444;
+        }
+
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-dark); color: var(--text-main); margin: 0; }
+        .navbar { background-color: var(--bg-card); padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; }
+        .navbar-brand { color: var(--primary); font-size: 1.5rem; font-weight: bold; }
+        .btn-logout { color: var(--danger); border: 1px solid var(--danger); padding: 0.5rem 1rem; border-radius: 6px; text-decoration: none; }
+        .btn-logout:hover { background-color: var(--danger); color: white; }
+
+        .container { max-width: 1200px; margin: 2rem auto; padding: 0 1rem; }
+        .section { background-color: var(--bg-card); border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem; }
+        h2 { border-bottom: 1px solid #334155; padding-bottom: 0.5rem; margin-top: 0; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+        th, td { padding: 1rem; text-align: left; border-bottom: 1px solid #334155; }
+        th { color: var(--text-muted); font-weight: 600; }
+
+        .badge { padding: 0.3rem 0.6rem; border-radius: 20px; font-size: 0.8rem; font-weight: bold; }
+        .badge-pendiente { background-color: rgba(245, 158, 11, 0.2); color: #f59e0b; }
+        .badge-publicado { background-color: rgba(16, 185, 129, 0.2); color: #10b981; }
+        .badge-rechazado { background-color: rgba(239, 68, 68, 0.2); color: #ef4444; }
+
+        .btn-primary { background-color: var(--primary); color: white; padding: 0.6rem 1.2rem; border-radius: 6px; text-decoration: none; border: none; cursor: pointer; font-weight: bold; }
+        .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+
+        .alert-warning { background-color: rgba(245, 158, 11, 0.2); border: 1px solid #f59e0b; color: #fbbf24; padding: 1rem; border-radius: 6px; margin-bottom: 1.5rem; }
+
+        /* Modal Styles */
+        .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:100; overflow-y: auto; }
+        .modal-content { background:var(--bg-card); max-width:800px; margin: 2rem auto; padding: 2rem; border-radius: 12px; border: 1px solid #334155; }
+        
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+        .form-group { margin-bottom: 1rem; }
+        label { display:block; margin-bottom:0.5rem; font-size:0.85rem; color:var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+        input, textarea, select { width:100%; padding:0.75rem; border-radius:6px; border:1px solid #334155; background:#0f172a; color:white; box-sizing:border-box; font-family: inherit; }
+        input:focus { outline: none; border-color: var(--primary); }
+
+        .req-section { background: rgba(15, 23, 42, 0.5); padding: 1.2rem; border-radius: 8px; margin-top: 1rem; border: 1px solid #334155; }
+        .req-title { color: var(--primary); font-size: 0.9rem; font-weight: bold; margin-bottom: 1rem; display: block; border-bottom: 1px solid #334155; padding-bottom: 0.5rem; }
+    </style>
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="navbar-brand">GameStore Studio</div>
+    <div>
+        <span style="margin-right: 15px; color: var(--text-muted);">Estudio: <strong style="color: var(--text-main);">{{ datos.nombre_estudio }}</strong></span>
+        <a href="{{ url_for('logout') }}" class="btn-logout">Salir</a>
+    </div>
+</nav>
+
+<div class="container">
+    {% if not datos.autorizado %}
+        <div class="alert-warning">
+            <strong>CUENTA EN REVISIÓN:</strong> Tu estudio aún no ha sido autorizado por un Administrador. Podrás publicar juegos una vez que tu identidad sea verificada.
+        </div>
+    {% endif %}
+
+    <!-- Flash messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div style="padding: 1rem; border-radius: 6px; margin-bottom: 1.5rem; font-size: 0.9rem; background:rgba(16, 185, 129, 0.2); border:1px solid var(--accent); color:#6ee7b7;">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="section">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h2>Catálogo de Videojuegos</h2>
+            {% if datos.autorizado %}
+            <button class="btn-primary" onclick="document.getElementById('modal-publicar').style.display='block'">+ PUBLICAR NUEVO JUEGO</button>
+            {% endif %}
+        </div>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>Título</th>
+                    <th>Estado</th>
+                    <th>Precio</th>
+                    <th>Fecha Lanzamiento</th>
+                    <th>Feedback / Notas</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for juego in juegos %}
+                <tr>
+                    <td><strong>{{ juego.titulo }}</strong></td>
+                    <td>
+                        <span class="badge badge-{{ juego.estado_publicacion }}">
+                            {{ juego.estado_publicacion | upper }}
+                        </span>
+                    </td>
+                    <td>${{ juego.precio_base }}</td>
+                    <td>{{ juego.fecha_lanzamiento or 'PENDIENTE' }}</td>
+                    <td style="font-size: 0.85rem; color: var(--danger);">
+                        {% if juego.estado_publicacion == 'rechazado' %}
+                            {{ juego.motivo_rechazo }}
+                        {% elif juego.estado_publicacion == 'pendiente' %}
+                            <span style="color: var(--text-muted);">En espera de revisión</span>
+                        {% else %}
+                            <span style="color: var(--accent);">Publicado con éxito</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5" style="text-align: center; padding: 3rem; color: var(--text-muted);">
+                        No has registrado ningún videojuego aún.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- MODAL DE PUBLICACIÓN -->
+<div id="modal-publicar" class="modal">
+    <div class="modal-content">
+        <h2 style="color: var(--primary); margin-bottom: 2rem;">Publicar Nuevo Videojuego</h2>
+        <form action="{{ url_for('publicar_juego') }}" method="POST">
+            
+            <!-- DATOS BÁSICOS -->
+            <div class="form-grid">
+                <div class="form-group" style="grid-column: span 2;">
+                    <label>Título del Juego</label>
+                    <input type="text" name="titulo" placeholder="Ej: Cyber Quest 2077" required>
+                </div>
+                <div class="form-group" style="grid-column: span 2;">
+                    <label>Descripción del Proyecto</label>
+                    <textarea name="descripcion" rows="3" placeholder="Describe brevemente de qué trata tu juego..." required></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Precio Base ($)</label>
+                    <input type="number" step="0.01" name="precio_base" placeholder="0.00" required>
+                </div>
+                <div class="form-group">
+                    <label>Tamaño en Disco (GB)</label>
+                    <input type="number" step="0.1" name="tamano_gb" placeholder="0.0" required>
+                </div>
+                <!-- CATEGORÍAS -->
+                <div class="form-group" style="grid-column: span 2;">
+                    <label>Categorías / Géneros (Puedes elegir varios)</label>
+                    <div style="display: flex; flex-wrap: wrap; gap: 1rem; padding: 1rem; background: #0f172a; border: 1px solid #334155; border-radius: 8px;">
+                        {% for cat in categorias %}
+                        <label style="color: var(--text-main); font-weight: normal; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; margin: 0;">
+                            <input type="checkbox" name="categorias" value="{{ cat.id_categoria }}">
+                            {{ cat.nombre }}
+                        </label>
+                        {% else %}
+                        <span style="color: var(--text-muted); font-size: 0.85rem;">No hay categorías creadas por el administrador aún.</span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- REQUISITOS HARDWARE -->
+            <div style="margin-top: 2rem;">
+                <h3 style="font-size: 1.1rem; border-bottom: 1px solid #334155; padding-bottom: 0.5rem;">Requisitos de Sistema</h3>
+                
+                <div class="form-grid">
+                    <!-- Mínimos -->
+                    <div class="req-section">
+                        <span class="req-title">ESPECIFICACIONES MÍNIMAS</span>
+                        <div class="form-group">
+                            <label>Sistema Operativo</label>
+                            <input type="text" name="min_so" placeholder="Windows 10 64-bit" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Procesador</label>
+                            <input type="text" name="min_cpu" placeholder="Intel i5 / AMD Ryzen 5" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Memoria RAM (GB)</label>
+                            <input type="number" name="min_ram" placeholder="8" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Tarjeta Gráfica</label>
+                            <input type="text" name="min_gpu" placeholder="GTX 1050 / RX 560" required>
+                        </div>
+                    </div>
+
+                    <!-- Recomendados -->
+                    <div class="req-section">
+                        <span class="req-title">ESPECIFICACIONES RECOMENDADAS</span>
+                        <div class="form-group">
+                            <label>Sistema Operativo</label>
+                            <input type="text" name="rec_so" placeholder="Windows 11 64-bit" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Procesador</label>
+                            <input type="text" name="rec_cpu" placeholder="Intel i7 / AMD Ryzen 7" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Memoria RAM (GB)</label>
+                            <input type="number" name="rec_ram" placeholder="16" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Tarjeta Gráfica</label>
+                            <input type="text" name="rec_gpu" placeholder="RTX 3060 / RX 6700" required>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display:flex; justify-content:flex-end; gap:1rem; margin-top:2.5rem; padding-top: 1.5rem; border-top: 1px solid #334155;">
+                <button type="button" onclick="document.getElementById('modal-publicar').style.display='none'" style="background:transparent; color:var(--text-muted); border:1px solid #334155; padding: 0.8rem 1.5rem; border-radius: 6px; cursor: pointer;">CANCELAR</button>
+                <!-- Equipo de Trabajo -->
+                <div style="grid-column: span 2; margin-top: 1rem; border-top: 1px solid #334155; padding-top: 1rem;">
+                    <h3 style="font-size: 0.9rem; color: var(--primary); margin-bottom: 0.5rem;">Equipo de Trabajo</h3>
+                    <div class="form-group">
+                        <label>ID del Colaborador (Opcional)</label>
+                        <input type="number" name="id_colaborador" placeholder="Ej: 15">
+                        <small style="color: var(--text-muted); display: block; margin-top: 0.3rem;">Ingresa el ID de cuenta de otro estudio para darle acceso a este juego.</small>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="grid-column: span 2; margin-top: 1rem;">ENVIAR A REVISIÓN</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+</body>
+</html>

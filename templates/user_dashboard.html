@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tienda y Biblioteca - GameStore</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --primary: #3b82f6;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #10b981;
+            --danger: #ef4444;
+        }
+
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-dark); color: var(--text-main); margin: 0; }
+        .navbar { background-color: var(--bg-card); padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; position: sticky; top: 0; z-index: 10; }
+        .navbar-brand { color: var(--primary); font-size: 1.5rem; font-weight: bold; }
+        
+        .tabs { display: flex; gap: 1rem; }
+        .tab-btn { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 1rem; padding: 0.5rem 1rem; border-bottom: 2px solid transparent; font-weight: 600; transition: all 0.3s; }
+        .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
+        
+        .user-info { display: flex; align-items: center; gap: 1.5rem; }
+        .saldo-container { display: flex; flex-direction: column; align-items: flex-end; }
+        .saldo-label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; }
+        .saldo { color: var(--accent); font-weight: bold; font-size: 1.2rem; }
+        
+        .btn-recargar { background: var(--accent); color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.85rem; }
+        .btn-logout { color: var(--danger); border: 1px solid var(--danger); padding: 0.4rem 0.8rem; border-radius: 6px; text-decoration: none; font-size: 0.85rem; font-weight: bold; }
+        .btn-logout:hover { background-color: var(--danger); color: white; }
+
+        .container { max-width: 1200px; margin: 2rem auto; padding: 0 1rem; }
+        .tab-content { display: none; animation: fadeIn 0.3s ease; }
+        .tab-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 2rem; }
+        .game-card { background-color: var(--bg-card); border-radius: 16px; overflow: hidden; transition: all 0.3s; border: 1px solid #334155; position: relative; }
+        .game-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.3); border-color: var(--primary); }
+        
+        .game-img { width: 100%; height: 160px; background: linear-gradient(45deg, #1e293b, #334155); display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-weight: bold; }
+        .game-info { padding: 1.5rem; }
+        .game-title { font-size: 1.25rem; margin: 0 0 0.5rem 0; font-weight: bold; color: var(--text-main); }
+        .game-price { color: var(--accent); font-weight: bold; font-size: 1.3rem; }
+        
+        .btn-buy-wallet { background: var(--primary); color: white; border: none; padding: 0.8rem; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 1rem; transition: 0.3s; }
+        .btn-buy-card { background: transparent; color: var(--text-muted); border: 1px solid #334155; padding: 0.8rem; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 0.5rem; transition: 0.3s; text-decoration: none; display: block; text-align: center; box-sizing: border-box; }
+        .btn-buy-card:hover { border-color: var(--primary); color: var(--primary); }
+        .btn-info { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.5); border: 1px solid #334155; color: white; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+        
+        .btn-play { background: var(--accent); color: white; border: none; padding: 0.8rem; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 1rem; }
+
+        /* Modal Styles */
+        .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:100; backdrop-filter: blur(5px); }
+        .modal-content { background:var(--bg-card); max-width:700px; margin: 4rem auto; padding: 2.5rem; border-radius: 16px; border: 1px solid #334155; }
+        
+        .req-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 1.5rem; }
+        .req-box { background: rgba(15, 23, 42, 0.5); padding: 1.5rem; border-radius: 10px; border: 1px solid #334155; }
+        .req-title { color: var(--primary); font-weight: bold; border-bottom: 1px solid #334155; padding-bottom: 0.5rem; margin-bottom: 1rem; display: block; font-size: 0.9rem; }
+        .req-item { font-size: 0.85rem; margin-bottom: 0.5rem; display: flex; flex-direction: column; }
+        .req-label { color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; }
+
+        .alert { padding: 1rem; border-radius: 6px; margin-bottom: 1.5rem; font-size: 0.9rem; border: 1px solid transparent; }
+        .alert-success { background: rgba(16, 185, 129, 0.2); border-color: var(--accent); color: #6ee7b7; }
+        .alert-danger { background: rgba(239, 68, 68, 0.2); border-color: var(--danger); color: #fca5a5; }
+    </style>
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="navbar-brand">GameStore</div>
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('tienda')">TIENDA</button>
+        <button class="tab-btn" onclick="switchTab('biblioteca')">MI BIBLIOTECA</button>
+    </div>
+    <div class="user-info">
+        <div class="saldo-container">
+            <span class="saldo-label">Tu Billetera</span>
+            <span class="saldo">${{ datos.saldo_billetera }}</span>
+        </div>
+        <button class="btn-recargar" onclick="document.getElementById('modal-recarga').style.display='block'">+ RECARGAR</button>
+        <a href="{{ url_for('logout') }}" class="btn-logout">SALIR</a>
+    </div>
+</nav>
+
+<div class="container">
+    <!-- Flash messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div id="tab-tienda" class="tab-content active">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+            <h2 style="margin: 0;">Juegos Destacados</h2>
+            <select id="filtro-categoria" onchange="filtrarJuegos()" style="padding: 0.5rem; background: var(--bg-card); color: white; border: 1px solid #334155; border-radius: 6px;">
+                <option value="todas">Todas las Categorías</option>
+                {% for cat in categorias %}
+                <option value="{{ cat.nombre }}">{{ cat.nombre }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="grid" id="grid-tienda">
+            {% for juego in juegos_tienda %}
+            <div class="game-card" data-categorias="{{ juego.categorias or '' }}">
+                <!-- Usamos data-juego para guardar el JSON de forma segura fuera del JS -->
+                <button class="btn-info" 
+                        data-juego='{{ juego | tojson | safe }}'
+                        onclick="openDetailsFromElement(this)">i</button>
+                <div class="game-img">GAMING PREVIEW</div>
+                <div class="game-info">
+                    <h3 class="game-title">{{ juego.titulo }}</h3>
+                    <div style="margin-bottom: 0.8rem;">
+                        {% if juego.categorias %}
+                            <span style="font-size: 0.75rem; color: var(--primary); background: rgba(59, 130, 246, 0.1); padding: 0.2rem 0.5rem; border-radius: 4px; border: 1px solid rgba(59, 130, 246, 0.2);">{{ juego.categorias }}</span>
+                        {% endif %}
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <span class="game-price">${{ juego.precio_base }}</span>
+                        <span style="color: var(--text-muted); font-size: 0.8rem;">{{ juego.tamaño_gb }} GB</span>
+                    </div>
+                    {% if datos.saldo_billetera >= juego.precio_base %}
+                    <form action="{{ url_for('comprar_juego', id_juego=juego.id_juego) }}" method="POST">
+                        <button type="submit" class="btn-buy-wallet">Pagar con Billetera</button>
+                    </form>
+                    {% else %}
+                    <button class="btn-buy-wallet" style="opacity: 0.5; cursor: not-allowed;">Saldo Insuficiente</button>
+                    {% endif %}
+                    <a href="{{ url_for('checkout', tipo='compra_directa', id_juego=juego.id_juego) }}" class="btn-buy-card">Pagar con Tarjeta</a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div id="tab-biblioteca" class="tab-content">
+        <h2 style="margin-bottom: 2rem;">Mi Colección Personal</h2>
+        <div class="grid">
+            {% for juego in mis_juegos %}
+            <div class="game-card">
+                <div class="game-img" style="background: linear-gradient(45deg, #10b981, #064e3b);">ADQUIRIDO</div>
+                <div class="game-info">
+                    <h3 class="game-title">{{ juego.titulo }}</h3>
+                    <p style="color: var(--text-muted); font-size: 0.85rem;">Obtenido el: {{ juego.fecha_agregado }}</p>
+                    <button class="btn-play">INICIAR JUEGO</button>
+                    <button class="btn-buy-card" style="margin-top: 0.5rem;" 
+                            data-id="{{ juego.id_juego }}" 
+                            data-titulo="{{ juego.titulo }}" 
+                            onclick="openResenaModal(this.getAttribute('data-id'), this.getAttribute('data-titulo'))">
+                        ⭐ Dejar Reseña
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- MODAL DE DETALLES -->
+<div id="modal-detalles" class="modal">
+    <div class="modal-content">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+            <h2 id="det-titulo" style="margin:0; color: var(--primary);">Título del Juego</h2>
+            <button onclick="document.getElementById('modal-detalles').style.display='none'" style="background:transparent; border:none; color:white; font-size:1.5rem; cursor:pointer;">×</button>
+        </div>
+        
+        <p id="det-desc" style="line-height: 1.6; color: var(--text-main); margin-bottom: 2rem;">Descripción del juego...</p>
+        
+        <h3 style="font-size: 1rem; border-bottom: 1px solid #334155; padding-bottom: 0.5rem;">Requisitos de Sistema</h3>
+        <div id="det-reqs" class="req-grid">
+            <!-- Se llena con JS -->
+        </div>
+
+        <h3 style="font-size: 1rem; border-bottom: 1px solid #334155; padding-bottom: 0.5rem; margin-top: 2rem;">Reseñas de Jugadores</h3>
+        <div id="det-resenas" style="margin-top: 1rem; max-height: 200px; overflow-y: auto;">
+            <!-- Se llena con JS -->
+        </div>
+    </div>
+</div>
+
+<!-- MODAL PARA DEJAR RESEÑA -->
+<div id="modal-resena" class="modal">
+    <div class="modal-content" style="max-width: 450px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h2 style="margin:0; color: var(--primary);">Reseñar: <span id="resena-titulo"></span></h2>
+            <button onclick="document.getElementById('modal-resena').style.display='none'" style="background:transparent; border:none; color:white; font-size:1.5rem; cursor:pointer;">×</button>
+        </div>
+        <form id="form-resena" action="" method="POST">
+            <div style="margin-bottom: 1rem;">
+                <label style="display:block; margin-bottom: 0.5rem; color: var(--text-muted);">Calificación (1-5 Estrellas)</label>
+                <input type="number" name="calificacion" min="1" max="5" value="5" required style="width: 100%; padding: 0.8rem; background: #0f172a; border: 1px solid #334155; color: white; border-radius: 8px; box-sizing: border-box;">
+            </div>
+            <div style="margin-bottom: 1.5rem;">
+                <label style="display:block; margin-bottom: 0.5rem; color: var(--text-muted);">Comentario</label>
+                <textarea name="comentario" rows="4" placeholder="¿Qué te pareció el juego?" style="width: 100%; padding: 0.8rem; background: #0f172a; border: 1px solid #334155; color: white; border-radius: 8px; box-sizing: border-box;"></textarea>
+            </div>
+            <button type="submit" class="btn-play">Publicar Reseña</button>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL DE RECARGA -->
+<div id="modal-recarga" class="modal">
+    <div class="modal-content" style="max-width: 400px; text-align: center;">
+        <h2 style="color: var(--primary);">Recargar Saldo</h2>
+        <form action="{{ url_for('checkout') }}" method="GET">
+            <input type="hidden" name="tipo" value="recarga">
+            <input type="number" name="monto" min="1" step="0.01" placeholder="0.00" required>
+            <div style="display:flex; gap:1rem; justify-content: center;">
+                <button type="button" onclick="document.getElementById('modal-recarga').style.display='none'" style="background:transparent; color:white; border:1px solid #334155; padding: 0.8rem 1.5rem; border-radius: 8px; cursor:pointer;">Cancelar</button>
+                <button type="submit" class="btn-recargar">Ir al Pago</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- BLOQUE DE DATOS SEGURO PARA EL EDITOR (application/json) -->
+<script id="requisitos-data" type="application/json">
+    {{ requisitos | tojson | safe }}
+</script>
+<script id="resenas-data" type="application/json">
+    {{ resenas | tojson | safe }}
+</script>
+
+<script>
+    // Leemos los datos desde los bloques JSON
+    const todosLosRequisitos = JSON.parse(document.getElementById('requisitos-data').textContent);
+    const todasLasResenas = JSON.parse(document.getElementById('resenas-data').textContent);
+
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+        event.target.classList.add('active');
+        document.getElementById('tab-' + tabId).classList.add('active');
+    }
+
+    function openDetailsFromElement(el) {
+        const juego = JSON.parse(el.getAttribute('data-juego'));
+        openDetailsModal(juego);
+    }
+
+    function openDetailsModal(juego) {
+        document.getElementById('det-titulo').innerText = juego.titulo;
+        document.getElementById('det-desc').innerText = juego.descripcion || 'Sin descripción disponible.';
+        
+        // Cargar Requisitos
+        const reqContainer = document.getElementById('det-reqs');
+        const reqsDelJuego = todosLosRequisitos.filter(r => r.id_juego === juego.id_juego);
+        let htmlReqs = '';
+        reqsDelJuego.forEach(req => {
+            htmlReqs += `
+                <div class="req-box">
+                    <span class="req-title">${req.tipo.toUpperCase()}</span>
+                    <div class="req-item"><span class="req-label">SO</span>${req.so_requerido}</div>
+                    <div class="req-item"><span class="req-label">CPU</span>${req.procesador}</div>
+                    <div class="req-item"><span class="req-label">RAM</span>${req.memoria_ram_gb} GB</div>
+                    <div class="req-item"><span class="req-label">GPU</span>${req.tarjeta_grafica}</div>
+                </div>
+            `;
+        });
+        if (htmlReqs === '') htmlReqs = '<p style="grid-column: span 2; text-align: center; color: var(--text-muted);">No hay requisitos registrados para este juego.</p>';
+        reqContainer.innerHTML = htmlReqs;
+
+        // Cargar Reseñas
+        const resenasContainer = document.getElementById('det-resenas');
+        const resenasDelJuego = todasLasResenas.filter(r => r.id_juego === juego.id_juego);
+        let htmlResenas = '';
+        resenasDelJuego.forEach(res => {
+            const estrellas = '⭐'.repeat(res.calificacion);
+            htmlResenas += `
+                <div style="background: rgba(15, 23, 42, 0.5); padding: 1rem; border-radius: 8px; margin-bottom: 0.5rem; border: 1px solid #334155;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                        <strong style="color: var(--text-main);">${res.nombre_usuario}</strong>
+                        <span>${estrellas}</span>
+                    </div>
+                    <p style="color: var(--text-muted); font-size: 0.9rem; margin: 0 0 0.5rem 0;">"${res.comentario}"</p>
+                    <small style="color: #64748b; font-size: 0.75rem;">Publicado el: ${res.fecha}</small>
+                </div>
+            `;
+        });
+        if (htmlResenas === '') htmlResenas = '<p style="text-align: center; color: var(--text-muted);">Aún no hay reseñas para este juego.</p>';
+        resenasContainer.innerHTML = htmlResenas;
+
+        document.getElementById('modal-detalles').style.display = 'block';
+    }
+
+    // Modal para Dejar Reseña
+    function openResenaModal(id_juego, titulo) {
+        document.getElementById('resena-titulo').innerText = titulo;
+        document.getElementById('form-resena').action = '/usuario/resena/' + id_juego;
+        document.getElementById('modal-resena').style.display = 'block';
+    }
+
+    // Filtrar juegos por categoría
+    function filtrarJuegos() {
+        const seleccion = document.getElementById('filtro-categoria').value;
+        const tarjetas = document.querySelectorAll('#grid-tienda .game-card');
+
+        tarjetas.forEach(tarjeta => {
+            if (seleccion === 'todas') {
+                tarjeta.style.display = 'block';
+            } else {
+                const categoriasDelJuego = tarjeta.getAttribute('data-categorias');
+                if (categoriasDelJuego.includes(seleccion)) {
+                    tarjeta.style.display = 'block';
+                } else {
+                    tarjeta.style.display = 'none';
+                }
+            }
+        });
+    }
+</script>
+
+</body>
+</html>

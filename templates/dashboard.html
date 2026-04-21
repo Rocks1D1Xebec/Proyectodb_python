@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Tienda de Videojuegos</title>
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --primary: #3b82f6;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #10b981;
+            --danger: #ef4444;
+        }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            margin: 0;
+            padding: 0;
+        }
+
+        .navbar {
+            background-color: var(--bg-card);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #334155;
+        }
+
+        .navbar-brand {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        .nav-links a {
+            color: var(--text-main);
+            text-decoration: none;
+            margin-left: 1.5rem;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary);
+        }
+
+        .btn-logout {
+            background-color: transparent;
+            border: 1px solid var(--danger);
+            color: var(--danger);
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+        }
+
+        .btn-logout:hover {
+            background-color: var(--danger);
+            color: white;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 3rem auto;
+            padding: 0 2rem;
+        }
+
+        .card {
+            background-color: var(--bg-card);
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: var(--primary);
+            margin-top: 0;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .info-item {
+            background-color: #0f172a;
+            padding: 1.5rem;
+            border-radius: 8px;
+            border: 1px solid #334155;
+        }
+
+        .info-label {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+        }
+
+        .info-value {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            background-color: rgba(59, 130, 246, 0.2);
+            color: #60a5fa;
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="navbar-brand">GameStore</div>
+        <div class="nav-links">
+            <span>{{ session.correo }}</span>
+            <a href="{{ url_for('logout') }}" class="btn-logout">Cerrar Sesión</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="card">
+            <h1>Bienvenido a tu Panel de Control</h1>
+            <p>Has iniciado sesión como <span class="badge">{{ session.tipo_cuenta | capitalize }}</span></p>
+
+            <div class="info-grid">
+                <!-- VISTA USUARIO -->
+                {% if session.tipo_cuenta == 'usuario' %}
+                    <div class="info-item">
+                        <div class="info-label">Nombre</div>
+                        <div class="info-value">{{ datos.nombre }}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Nickname</div>
+                        <div class="info-value">@{{ datos.nombre_usuario }}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Saldo en Billetera</div>
+                        <div class="info-value" style="color: var(--accent);">${{ datos.saldo_billetera }}</div>
+                    </div>
+
+                <!-- VISTA DESARROLLADOR -->
+                {% elif session.tipo_cuenta == 'desarrollador' %}
+                    <div class="info-item">
+                        <div class="info-label">Nombre del Estudio</div>
+                        <div class="info-value">{{ datos.nombre_estudio }}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Estado de Autorización</div>
+                        <div class="info-value">
+                            {% if datos.autorizado %}
+                                <span style="color: var(--accent);">Autorizado</span>
+                            {% else %}
+                                <span style="color: #fbbf24;">Pendiente</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                <!-- VISTA ADMINISTRADOR -->
+                {% elif session.tipo_cuenta == 'administrador' %}
+                    <div class="info-item">
+                        <div class="info-label">Nombre Completo</div>
+                        <div class="info-value">{{ datos.nombre_completo }}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Nivel de Acceso</div>
+                        <div class="info-value">{{ datos.nivel_acceso }}</div>
+                    </div>
+                {% endif %}
+            </div>
+            
+            <div style="margin-top: 3rem; text-align: center; color: var(--text-muted);">
+                <p>Aquí irá el resto de la interfaz (Tienda, Biblioteca, Gestión de juegos, etc.) según el rol.</p>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

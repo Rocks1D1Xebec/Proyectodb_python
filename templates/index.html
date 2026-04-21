@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tienda de Videojuegos - Iniciar Sesión</title>
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #10b981;
+            --danger: #ef4444;
+        }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-image: radial-gradient(circle at 50% -20%, #1e3a8a, var(--bg-dark));
+        }
+
+        .container {
+            background-color: var(--bg-card);
+            border-radius: 12px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            width: 100%;
+            max-width: 450px;
+            padding: 2rem;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .tabs {
+            display: flex;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid #334155;
+        }
+
+        .tab {
+            flex: 1;
+            text-align: center;
+            padding: 1rem;
+            cursor: pointer;
+            color: var(--text-muted);
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+
+        .tab.active {
+            color: var(--primary);
+            border-bottom: 2px solid var(--primary);
+        }
+
+        .form-container {
+            display: none;
+            animation: fadeIn 0.4s ease forwards;
+        }
+
+        .form-container.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h2 {
+            margin-top: 0;
+            text-align: center;
+            color: var(--text-main);
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.2rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 0.75rem;
+            border-radius: 6px;
+            border: 1px solid #334155;
+            background-color: #0f172a;
+            color: var(--text-main);
+            font-size: 1rem;
+            box-sizing: border-box;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+        }
+
+        button {
+            width: 100%;
+            padding: 0.8rem;
+            border: none;
+            border-radius: 6px;
+            background-color: var(--primary);
+            color: white;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.1s;
+            margin-top: 1rem;
+        }
+
+        button:hover {
+            background-color: var(--primary-hover);
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: 6px;
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+        }
+
+        .alert-danger { background-color: rgba(239, 68, 68, 0.2); border: 1px solid var(--danger); color: #fca5a5; }
+        .alert-success { background-color: rgba(16, 185, 129, 0.2); border: 1px solid var(--accent); color: #6ee7b7; }
+
+        .extra-fields {
+            display: none;
+        }
+        
+        .extra-fields.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- Flash messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('login')">Iniciar Sesión</div>
+            <div class="tab" onclick="switchTab('register')">Registrarse</div>
+        </div>
+
+        <!-- LOGIN FORM -->
+        <div id="login-form" class="form-container active">
+            <h2>Bienvenido de nuevo</h2>
+            <form action="{{ url_for('login') }}" method="POST">
+                <div class="form-group">
+                    <label for="login-correo">Correo Electrónico</label>
+                    <input type="email" id="login-correo" name="correo" required>
+                </div>
+                <div class="form-group">
+                    <label for="login-password">Contraseña</label>
+                    <input type="password" id="login-password" name="password" required>
+                </div>
+                <button type="submit">Ingresar</button>
+            </form>
+        </div>
+
+        <!-- REGISTRATION FORM -->
+        <div id="register-form" class="form-container">
+            <h2>Crear una Cuenta</h2>
+            <form action="{{ url_for('registro') }}" method="POST">
+                <div class="form-group">
+                    <label for="tipo_cuenta">Tipo de Cuenta</label>
+                    <select id="tipo_cuenta" name="tipo_cuenta" onchange="toggleFields()" required>
+                        <option value="usuario">Jugador</option>
+                        <option value="desarrollador">Desarrollador</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="reg-correo">Correo Electrónico</label>
+                    <input type="email" id="reg-correo" name="correo" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="reg-password">Contraseña</label>
+                    <input type="password" id="reg-password" name="password" required>
+                </div>
+
+                <!-- Campos de Usuario (Jugador) -->
+                <div id="campos-usuario" class="extra-fields active">
+                    <div class="form-group">
+                        <label for="nombre_usuario">Nombre de Usuario (Nickname)</label>
+                        <input type="text" id="nombre_usuario" name="nombre_usuario">
+                    </div>
+                    <div class="form-group" style="display:flex; gap:10px;">
+                        <div style="flex:1;">
+                            <label for="nombre">Nombre</label>
+                            <input type="text" id="nombre" name="nombre">
+                        </div>
+                        <div style="flex:1;">
+                            <label for="apellido">Apellido</label>
+                            <input type="text" id="apellido" name="apellido">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="fecha_nacimiento">Fecha de Nacimiento</label>
+                        <input type="date" id="fecha_nacimiento" name="fecha_nacimiento">
+                    </div>
+                    <div class="form-group">
+                        <label for="pais">País</label>
+                        <input type="text" id="pais" name="pais">
+                    </div>
+                </div>
+
+                <!-- Campos de Desarrollador -->
+                <div id="campos-desarrollador" class="extra-fields">
+                    <div class="form-group">
+                        <label for="nombre_estudio">Nombre del Estudio</label>
+                        <input type="text" id="nombre_estudio" name="nombre_estudio">
+                    </div>
+                    <div class="form-group">
+                        <label for="pais_dev">País Sede</label>
+                        <input type="text" id="pais_dev" name="pais_dev">
+                    </div>
+                    <div class="form-group">
+                        <label for="sitio_web">Sitio Web (Opcional)</label>
+                        <input type="url" id="sitio_web" name="sitio_web">
+                    </div>
+                </div>
+
+                <button type="submit">Registrarse</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.form-container').forEach(f => f.classList.remove('active'));
+
+            if (tab === 'login') {
+                document.querySelectorAll('.tab')[0].classList.add('active');
+                document.getElementById('login-form').classList.add('active');
+            } else {
+                document.querySelectorAll('.tab')[1].classList.add('active');
+                document.getElementById('register-form').classList.add('active');
+            }
+        }
+
+        function toggleFields() {
+            const tipo = document.getElementById('tipo_cuenta').value;
+            const camposUsuario = document.getElementById('campos-usuario');
+            const camposDev = document.getElementById('campos-desarrollador');
+
+            // Quitar required
+            const userInputs = camposUsuario.querySelectorAll('input');
+            const devInputs = camposDev.querySelectorAll('input:not([type="url"])');
+            
+            camposUsuario.classList.remove('active');
+            camposDev.classList.remove('active');
+            
+            userInputs.forEach(i => i.required = false);
+            devInputs.forEach(i => i.required = false);
+
+            if (tipo === 'usuario') {
+                document.getElementById('campos-usuario').classList.add('active');
+                document.getElementById('nombre_usuario').required = true;
+                document.getElementById('nombre').required = true;
+                document.getElementById('apellido').required = true;
+            } else if (tipo === 'desarrollador') {
+                document.getElementById('campos-desarrollador').classList.add('active');
+                document.getElementById('nombre_estudio').required = true;
+                document.getElementById('pais_dev').required = true;
+            }
+        }
+        
+        // Inicializar
+        toggleFields();
+    </script>
+</body>
+</html>

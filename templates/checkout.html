@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pasarela de Pago Segura - GameStore</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --primary: #3b82f6;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #10b981;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-image: radial-gradient(circle at top right, #1e3a8a, transparent),
+                              radial-gradient(circle at bottom left, #1e3a8a, transparent);
+        }
+
+        .checkout-container {
+            background-color: var(--bg-card);
+            padding: 2.5rem;
+            border-radius: 20px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            width: 100%;
+            max-width: 450px;
+            border: 1px solid #334155;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .header h1 { margin: 0; font-size: 1.5rem; color: var(--primary); }
+        .header p { color: var(--text-muted); font-size: 0.9rem; }
+
+        .summary {
+            background: rgba(15, 23, 42, 0.5);
+            padding: 1rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            border-left: 4px solid var(--primary);
+        }
+
+        .summary-item { display: flex; justify-content: space-between; margin-bottom: 0.5rem; }
+        .summary-total { font-weight: bold; font-size: 1.2rem; color: var(--accent); margin-top: 0.5rem; border-top: 1px solid #334155; padding-top: 0.5rem; }
+
+        .card-preview {
+            background: linear-gradient(135deg, #3b82f6 0%, #1e3a8a 100%);
+            height: 200px;
+            border-radius: 15px;
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card-preview::before {
+            content: "";
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            transform: rotate(30deg);
+        }
+
+        .chip { width: 50px; height: 35px; background: #fbbf24; border-radius: 5px; }
+        .card-number-display { font-size: 1.4rem; letter-spacing: 4px; font-family: 'Courier New', monospace; }
+        .card-bottom { display: flex; justify-content: space-between; font-size: 0.8rem; text-transform: uppercase; }
+
+        .form-group { margin-bottom: 1.2rem; }
+        label { display: block; margin-bottom: 0.5rem; font-size: 0.85rem; color: var(--text-muted); }
+        input {
+            width: 100%;
+            padding: 0.8rem;
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            color: white;
+            font-size: 1rem;
+            box-sizing: border-box;
+        }
+        input:focus { outline: none; border-color: var(--primary); }
+
+        .row { display: flex; gap: 1rem; }
+        .row div { flex: 1; }
+
+        .btn-pay {
+            width: 100%;
+            padding: 1rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 1rem;
+        }
+        .btn-pay:hover { background: #2563eb; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(59, 130, 246, 0.4); }
+
+        .cancel-link {
+            display: block;
+            text-align: center;
+            margin-top: 1.5rem;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+        .cancel-link:hover { color: var(--danger); }
+    </style>
+</head>
+<body>
+
+<div class="checkout-container">
+    <div class="header">
+        <h1>Finalizar Pago</h1>
+        <p>Transacción segura encriptada</p>
+    </div>
+
+    <div class="summary">
+        <div class="summary-item">
+            <span>Concepto:</span>
+            <span>{{ concepto }}</span>
+        </div>
+        <div class="summary-total">
+            <span>Total a pagar:</span>
+            <span>${{ monto }}</span>
+        </div>
+    </div>
+
+    <div class="card-preview">
+        <div class="chip"></div>
+        <div class="card-number-display" id="disp-number">**** **** **** ****</div>
+        <div class="card-bottom">
+            <div>
+                <label style="color: rgba(255,255,255,0.7); margin:0;">Titular</label>
+                <div id="disp-name">NOMBRE APELLIDO</div>
+            </div>
+            <div>
+                <label style="color: rgba(255,255,255,0.7); margin:0;">Exp</label>
+                <div id="disp-exp">MM/AA</div>
+            </div>
+        </div>
+    </div>
+
+    <form action="{{ url_for('procesar_pago') }}" method="POST">
+        <input type="hidden" name="monto" value="{{ monto }}">
+        <input type="hidden" name="tipo" value="{{ tipo }}">
+        <input type="hidden" name="id_juego" value="{{ id_juego }}">
+
+        <div class="form-group">
+            <label for="card-name">Nombre en la tarjeta</label>
+            <input type="text" id="card-name" name="titular" placeholder="EJ. JUAN PEREZ" required oninput="updateCard()">
+        </div>
+
+        <div class="form-group">
+            <label for="card-number">Número de tarjeta</label>
+            <input type="text" id="card-number" name="numero" placeholder="0000 0000 0000 0000" maxlength="19" required oninput="updateCard()">
+        </div>
+
+        <div class="row">
+            <div class="form-group">
+                <label for="card-exp">Vencimiento</label>
+                <input type="text" id="card-exp" name="exp" placeholder="MM/AA" maxlength="5" required oninput="updateCard()">
+            </div>
+            <div class="form-group">
+                <label for="card-cvv">CVV</label>
+                <input type="password" id="card-cvv" name="cvv" placeholder="***" maxlength="3" required>
+            </div>
+        </div>
+
+        <button type="submit" class="btn-pay">Pagar Ahora</button>
+    </form>
+
+    <a href="{{ url_for('dashboard') }}" class="cancel-link">Cancelar y volver</a>
+</div>
+
+<script>
+    function updateCard() {
+        const name = document.getElementById('card-name').value;
+        const number = document.getElementById('card-number').value;
+        const exp = document.getElementById('card-exp').value;
+
+        document.getElementById('disp-name').innerText = name || 'NOMBRE APELLIDO';
+        document.getElementById('disp-number').innerText = number || '**** **** **** ****';
+        document.getElementById('disp-exp').innerText = exp || 'MM/AA';
+    }
+
+    // Formateador simple para el número de tarjeta
+    document.getElementById('card-number').addEventListener('input', function (e) {
+        e.target.value = e.target.value.replace(/[^\d]/g, '').replace(/(.{4})/g, '$1 ').trim();
+    });
+
+    // Formateador para fecha
+    document.getElementById('card-exp').addEventListener('input', function (e) {
+        let val = e.target.value.replace(/[^\d]/g, '');
+        if (val.length >= 2) {
+            e.target.value = val.slice(0, 2) + '/' + val.slice(2, 4);
+        }
+    });
+</script>
+
+</body>
+</html>
