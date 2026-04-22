@@ -279,6 +279,14 @@ def dashboard():
         """)
         todas_las_cuentas = cursor.fetchall()
         
+        # 5. Obtener todos los administradores
+        cursor.execute("""
+            SELECT c.id_cuenta, c.correo, c.estado, a.nombre_completo, a.nivel_acceso
+            FROM cuenta c
+            JOIN administrador a ON c.id_cuenta = a.id_cuenta
+        """)
+        todos_los_admins = cursor.fetchall()
+        
         cursor.close()
         conn.close()
         return render_template('admin_dashboard.html', 
@@ -287,6 +295,7 @@ def dashboard():
                              juegos_pendientes=juegos_pendientes,
                              todos_los_juegos=todos_los_juegos,
                              todas_las_cuentas=todas_las_cuentas,
+                             todos_los_admins=todos_los_admins,
                              categorias=todas_las_categorias)
 
 @app.route('/admin/crear_categoria', methods=['POST'])
