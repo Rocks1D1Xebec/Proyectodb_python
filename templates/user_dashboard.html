@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tienda y Biblioteca - GameStore</title>
+    <title>Tienda y Biblioteca - DataPlay</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -72,7 +72,7 @@
 <body>
 
 <nav class="navbar">
-    <div class="navbar-brand">GameStore</div>
+    <div class="navbar-brand">DataPlay</div>
     <div class="tabs">
         <button class="tab-btn active" onclick="switchTab('tienda')">TIENDA</button>
         <button class="tab-btn" onclick="switchTab('biblioteca')">MI BIBLIOTECA</button>
@@ -147,9 +147,17 @@
         <div class="grid">
             {% for juego in mis_juegos %}
             <div class="game-card">
+                <button class="btn-info" 
+                        data-juego='{{ juego | tojson | safe }}'
+                        onclick="openDetailsFromElement(this)">i</button>
                 <div class="game-img" style="background: linear-gradient(45deg, #10b981, #064e3b);">ADQUIRIDO</div>
                 <div class="game-info">
                     <h3 class="game-title">{{ juego.titulo }}</h3>
+                    <div style="margin-bottom: 0.8rem;">
+                        {% if juego.categorias %}
+                            <span style="font-size: 0.75rem; color: var(--primary); background: rgba(59, 130, 246, 0.1); padding: 0.2rem 0.5rem; border-radius: 4px; border: 1px solid rgba(59, 130, 246, 0.2);">{{ juego.categorias }}</span>
+                        {% endif %}
+                    </div>
                     <p style="color: var(--text-muted); font-size: 0.85rem;">Obtenido el: {{ juego.fecha_agregado }}</p>
                     <button class="btn-play">INICIAR JUEGO</button>
                     <button class="btn-buy-card" style="margin-top: 0.5rem;" 
