@@ -2,16 +2,18 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 import mysql.connector
 from mysql.connector import Error
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import date
+from datetime import date, datetime
+from decimal import Decimal
+import json
 
 app = Flask(__name__)
-app.secret_key = 'tu_clave_secreta_super_segura' # Cambia esto en producción
+app.secret_key = 'tu_clave_secreta_super_segura'
 
 # Configuración de la base de datos
 DB_CONFIG = {
     'host': 'localhost',
-    'user': 'root', # Cambia por tu usuario de MySQL
-    'password': '77765192q', # Cambia por tu contraseña de MySQL
+    'user': 'root',
+    'password': '77765192q',
     'database': 'tienda_videojuegos'
 }
 
@@ -202,14 +204,28 @@ def dashboard():
             if r['fecha']:
                 r['fecha'] = r['fecha'].strftime('%Y-%m-%d')
         
-        # Obtener juegos de la biblioteca del usuario
+        # Obtener juegos de la biblioteca del usuario con sus categorías
         cursor.execute("""
-            SELECT v.*, b.fecha_agregado 
+            SELECT v.id_juego, v.titulo, v.descripcion, v.precio_base, v.fecha_lanzamiento, 
+                   v.portada_url, v.tamaño_gb, b.fecha_agregado,
+                   GROUP_CONCAT(c.nombre SEPARATOR ', ') as categorias
             FROM biblioteca b 
             JOIN videojuego v ON b.id_juego = v.id_juego 
+            LEFT JOIN videojuego_categoria vc ON v.id_juego = vc.id_juego
+            LEFT JOIN categoria c ON vc.id_categoria = c.id_categoria
             WHERE b.id_cuenta_usuario = %s
+            GROUP BY v.id_juego, b.fecha_agregado
         """, (session['usuario_id'],))
         mis_juegos = cursor.fetchall()
+
+        # Formatear datos de mis_juegos para JSON
+        for juego in mis_juegos:
+            if juego['fecha_lanzamiento']:
+                juego['fecha_lanzamiento'] = juego['fecha_lanzamiento'].strftime('%Y-%m-%d')
+            if juego['fecha_agregado']:
+                juego['fecha_agregado'] = juego['fecha_agregado'].strftime('%Y-%m-%d')
+            juego['precio_base'] = float(juego['precio_base'])
+            juego['tamaño_gb'] = float(juego['tamaño_gb'])
         
         cursor.close()
         conn.close()
@@ -507,6 +523,61 @@ def admin_rechazar_juego(id_juego):
         conn.close()
         
     return redirect(url_for('dashboard'))
+
+@app.route('/admin/ejecutar_sql', methods=['POST'])
+def admin_ejecutar_sql():
+    if 'usuario_id' not in session or session['tipo_cuenta'] != 'administrador':
+        return {"error": "No autorizado"}, 403
+    
+    data = request.get_json()
+    query = data.get('query')
+    
+    if not query:
+        return {"error": "Consulta vacía"}, 400
+        
+    conn = get_db_connection()
+    if not conn:
+        return {"error": "Error de conexión a la base de datos"}, 500
+        
+    cursor = conn.cursor(dictionary=True)
+    try:
+        # Intentar ejecutar la consulta
+        # Nota: mysql-connector no soporta múltiples sentencias por defecto en execute()
+        # pero para una consola simple está bien.
+        cursor.execute(query)
+        
+        # Verificar si la consulta devuelve resultados (SELECT, SHOW, etc)
+        is_select = query.strip().upper().startswith(('SELECT', 'SHOW', 'DESCRIBE', 'EXPLAIN'))
+        
+        if is_select:
+            results = cursor.fetchall()
+            # Serializar tipos no compatibles con JSON
+            for row in results:
+                for key, value in row.items():
+                    if isinstance(value, (date, datetime)):
+                        row[key] = value.isoformat()
+                    elif isinstance(value, Decimal):
+                        row[key] = float(value)
+            
+            return {
+                "success": True, 
+                "type": "select", 
+                "results": results,
+                "columns": list(results[0].keys()) if results else []
+            }
+        else:
+            conn.commit()
+            return {
+                "success": True, 
+                "type": "dml", 
+                "affected_rows": cursor.rowcount
+            }
+            
+    except Error as e:
+        return {"success": False, "error": str(e)}, 400
+    finally:
+        cursor.close()
+        conn.close()
 
 @app.route('/publicar_juego', methods=['POST'])
 def publicar_juego():
