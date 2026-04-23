@@ -13,7 +13,7 @@ app.secret_key = 'tu_clave_secreta_super_segura'
 DB_CONFIG = {
     'host': 'localhost',
     'user': 'root',
-    'password': '77765192q',
+    'password': '',
     'database': 'tienda_videojuegos'
 }
 

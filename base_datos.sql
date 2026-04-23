@@ -143,6 +143,8 @@ CREATE TABLE videojuego_categoria (
 
 
 
+
+
 INSERT INTO cuenta (correo, contraseña, fecha_registro, estado, tipo_cuenta) VALUES
 -- Admins
 ('rivan@admin.com',    'scrypt:32768:8:1$VmuuojNViq73Yzys$22662bf6e640f26f1431eb2683d5b5793b4ec1f55e3b9e01fe0af418d052f27f6c706e8b4121dac4a4043359b85445c4bcca575e99732a9cb002f2bc9216c7ab', '2023-01-10', 'activo', 'administrador'),
